@@ -6,8 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import NavBar from "@/components/NavBar";
 import { SessionProvider } from "next-auth/react";
-import AppFooter from "../components/footer";
-import BtmNav from "../components/BtmNav";
+import BtmNav from "@/components/BtmNav";
 import ScrollTop from "@/components/ScrollTop";
 
 const roboto = Nunito({
@@ -16,9 +15,11 @@ const roboto = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: "Sudan PC | Premium Gaming Components",
-  description: "The ultimate destination for PC builders and gamers in Sudan. Quality components, rapid delivery.",
+  title: "SPS-Admin",
+  description: "SPS-Admin",
 };
+ 
+
 
 export default function RootLayout({
   children,
@@ -38,14 +39,13 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <ScrollTop />
-            <main className="w-full grow min-h-screen">
+            <main className="w-full grow min-h-screen mb-8">
               <NavBar />
               <Toaster position="top-center" expand />
               <div className="pt-0.5"></div>
               {children}
             </main>
             <BtmNav />
-            <AppFooter />
           </ThemeProvider>
         </SessionProvider>
       </body>

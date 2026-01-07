@@ -2,19 +2,14 @@ import { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Sudan PC Shop",
-    short_name: "SudanPC",
-    description: "Premium PC components and accessories in Sudan",
-    start_url: "/",
+    name: "SPS-Admin",
+    short_name: "SPS-Admin",
+    description: "SPS-Admin",
+    start_url: "/analatic/2026-01",
     display: "standalone",
     background_color: "#ffffff",
     theme_color: "#ffffff",
     icons: [
-    //   {
-    //     src: "/favicon.ico",
-    //     sizes: "512x512",
-    //     type: "image/png",  
-    //   },
       {
         src: "/apple-icon",
         sizes: "180x180",

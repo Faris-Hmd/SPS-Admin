@@ -12,8 +12,8 @@ const COL = "users";
  */
 export async function getUser(email: string): Promise<UserData | null> {
   if (!email) return null;
-  console.log("get user from server", email);
-  
+  // console.log("get user from server", email);
+
   try {
     const snap = await getDoc(doc(db, COL, email));
     if (!snap.exists()) return null;
@@ -33,10 +33,10 @@ export async function getUser(email: string): Promise<UserData | null> {
  */
 export async function upUser(
   email: string,
-  data: Partial<UserData>
+  data: Partial<UserData>,
 ): Promise<{ success: boolean; error?: string }> {
   if (!email) return { success: false, error: "Email required" };
-  console.log("up user from server", email);
+  // console.log("up user from server", email);
 
   try {
     const userRef = doc(db, COL, email);
@@ -46,7 +46,7 @@ export async function upUser(
         ...data,
         updatedAt: new Date().toISOString(),
       },
-      { merge: true }
+      { merge: true },
     );
 
     revalidatePath("/profile");

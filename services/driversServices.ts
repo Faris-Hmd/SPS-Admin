@@ -72,7 +72,7 @@ export async function addDriver(data: Omit<Driver, "id">): Promise<{ success: bo
       ...data,
       updatedAt: new Date().toISOString(),
     });
-    revalidatePath("/dashboard/drivers");
+    revalidatePath("/drivers");
     return { success: true, id: res.id };
   } catch (error) {
     console.error("Error adding driver:", error);
@@ -89,7 +89,7 @@ export async function upDriver(id: string, data: Partial<Driver>): Promise<{ suc
       ...data,
       updatedAt: new Date().toISOString(),
     } as any);
-    revalidatePath("/dashboard/drivers");
+    revalidatePath("/drivers");
     return { success: true };
   } catch (error) {
     console.error("Error updating driver:", error);
@@ -103,7 +103,7 @@ export async function upDriver(id: string, data: Partial<Driver>): Promise<{ suc
 export async function delDriver(id: string): Promise<{ success: boolean; error?: string }> {
   try {
     await deleteDoc(doc(db, COL, id));
-    revalidatePath("/dashboard/drivers");
+    revalidatePath("/drivers");
     return { success: true };
   } catch (error) {
     console.error("Error deleting driver:", error);

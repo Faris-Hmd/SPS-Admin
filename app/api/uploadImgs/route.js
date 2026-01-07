@@ -22,6 +22,7 @@ export async function POST(request) {
             // optional, sent to your server on upload completion
             // you could pass a user id from auth, or a value from clientPayload
           }),
+          callbackUrl: "https://localhost:3000/api/uploadImgs",
         };
       },
       onUploadCompleted: async ({ blob, tokenPayload }) => {
@@ -41,7 +42,7 @@ export async function POST(request) {
   } catch (error) {
     return NextResponse.json(
       { error: error.message },
-      { status: 400 } // The webhook will retry 5 times waiting for a status 200
+      { status: 400 }, // The webhook will retry 5 times waiting for a status 200
     );
   }
 }

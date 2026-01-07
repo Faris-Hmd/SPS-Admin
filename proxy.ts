@@ -1,13 +1,31 @@
 import { NextRequest, NextResponse } from "next/server.js";
-export { auth as middleware } from "@/lib/auth";
 import { auth } from "@/lib/auth";
-// const protRoute = ["/wishlist", "/Dashboard", "/Dashboard/productsSet"];
-export default async function proxy(request: NextRequest) {
+
+export default async function middleware(request: NextRequest) {
   const sess = await auth();
-  if (sess === null)
+  const { pathname } = request.nextUrl;
+
+  // 1. If user is already on the login page, don't redirect
+  if (pathname === "/login") {
+    return NextResponse.next();
+  }
+
+  // 2. If no session, redirect to login
+  if (!sess) {
     return NextResponse.redirect(new URL("/login", request.url));
-  else return NextResponse.next();
+  }
+
+  return NextResponse.next();
 }
+
 export const config = {
-  matcher: ["/dashboard/:path*", "/profile/:path*"],
+  /*
+   * Match all request paths except for the ones starting with:
+   * - api (API routes)
+   * - _next/static (static files)
+   * - _next/image (image optimization files)
+   * - favicon.ico (favicon file)
+   * - public (public folder assets like logo.png)
+   */
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|public).*)"],
 };
