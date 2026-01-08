@@ -10,7 +10,7 @@ export const revalidate = 20;
 // Pre-render months of 2026 (Updated to current year context)
 export async function generateStaticParams() {
   const months = Array.from(
-    { length: 12 },
+    { length: 3 },
     (_, i) => `2026-${String(i + 1).padStart(2, "0")}`,
   );
   return months.map((date) => ({
@@ -37,6 +37,7 @@ export default async function ShippedOrdersPage({
   params: Promise<{ date: string }>;
 }) {
   const { date } = await params;
+  console.log(" date", date);
   const orders = await getMonthlyDeliveredOrders(date);
 
   const [year, month] = date.split("-");
