@@ -15,19 +15,41 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ProductImage, ProductType } from "@/types/productsTypes";
+import imageCompression from "browser-image-compression";
 
 export default function UpdateForm({ product }: { product: ProductType }) {
   const [imgs, setImgs] = useState<ProductImage[]>(product.p_imgs || []);
   const [pending, setPending] = useState(false);
 
-  function handleImgChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleImgChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (!e.target.files) return;
+
     const files = Array.from(e.target.files);
-    const newImgs = files.map((file) => ({
-      url: URL.createObjectURL(file),
-      productImgFile: file,
-    }));
-    setImgs((prev) => [...prev, ...newImgs]);
+    setPending(true); // Show loader while compressing
+
+    const options = {
+      maxSizeMB: 0.8, // Max size ~800KB
+      maxWidthOrHeight: 1280, // High res but optimized
+      useWebWorker: true,
+    };
+
+    try {
+      const compressedFiles = await Promise.all(
+        files.map(async (file) => {
+          const compressed = await imageCompression(file, options);
+          return {
+            url: URL.createObjectURL(compressed),
+            productImgFile: compressed, // Now sending optimized blob
+          };
+        }),
+      );
+
+      setImgs((prev) => [...prev, ...compressedFiles]);
+    } catch (error) {
+      toast.error("Image compression failed");
+    } finally {
+      setPending(false);
+    }
   }
 
   function handleRemove(imgUrl: string) {

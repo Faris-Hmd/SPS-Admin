@@ -1,7 +1,9 @@
 "use client";
 
-import * as React from "react";
-import { Label, Pie, PieChart, Sector } from "recharts";
+import useSWR from "swr";
+import { Pie, PieChart, Label, Sector } from "recharts";
+import { getCountFromServer, query, where } from "firebase/firestore";
+import { productsRef } from "@/lib/firebase";
 
 import {
   Card,
@@ -24,42 +26,101 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-export const description = "An interactive pie chart";
-
+import { categories } from "@/data/categories"; // Assuming this is your array of strings
+import { useEffect, useState, useMemo } from "react";
 const chartConfig = {
   PC: { label: "PC", color: "#3b82f6" },
+
   LAPTOP: { label: "Laptop", color: "#10b981" },
+
   WEBCAMS: { label: "Webcams", color: "#f59e0b" },
+
   HARD_DRIVES: { label: "Hard Drives", color: "#ef4444" },
+
   HEADSETS: { label: "Headsets", color: "#8b5cf6" },
+
   KEYBOARDS: { label: "Keyboards", color: "#ec4899" },
+
   SPEAKERS: { label: "Speakers", color: "#06b6d4" },
+
   PRINTERS: { label: "Printers", color: "#f97316" },
+
   MICROPHONES: { label: "Microphones", color: "#14b8a6" },
+
   MONITORS: { label: "Monitors", color: "#6366f1" },
+
   TABLETS: { label: "Tablets", color: "#d946ef" },
+
   PROJECTORS: { label: "Projectors", color: "#84cc16" },
+
   SCANNERS: { label: "Scanners", color: "#475569" },
+
   SSD: { label: "SSD", color: "#0f172a" },
+
   MOUSES: { label: "Mouses", color: "#7c3aed" },
+
   DESKTOP: { label: "Desktop", color: "#2563eb" },
 };
 
-export default function ChartPieInteractive({ categories }) {
+// 1. The Fetcher Function
+const fetchCategoryStock = async () => {
+  const results = await Promise.all(
+    categories.slice(0, 16).map(async (category) => {
+      const q = query(productsRef, where("p_cat", "==", category));
+      const snap = await getCountFromServer(q);
+      return {
+        category,
+        quantity: snap.data().count,
+        fill: `var(--color-${category})`,
+      };
+    }),
+  );
+  return results;
+};
+
+export default function ChartPieInteractive() {
   const id = "pie-interactive";
-  const [activeMonth, setActiveMonth] = React.useState(categories[0]?.category || "");
 
-  const activeIndex = React.useMemo(
-    () => categories.findIndex((item) => item.category === activeMonth),
-    [activeMonth, categories]
-  );
-  const months = React.useMemo(
-    () => categories.map((item) => item.category),
-    [categories]
+  // 2. SWR Hook
+  const { data, isLoading, error } = useSWR(
+    "inventory-distribution",
+    fetchCategoryStock,
+    {
+      revalidateOnFocus: false, // Don't refetch every time user switches tabs
+      refreshInterval: 60000, // Auto-refresh every 1 minute
+    },
   );
 
-  if (!categories || categories.length === 0) return null;
+  const [activeCategory, setActiveCategory] = useState("");
+
+  // Update active category once data is loaded
+  useEffect(() => {
+    if (data && data.length > 0 && !activeCategory) {
+      setActiveCategory(data[0].category);
+    }
+  }, [data, activeCategory]);
+
+  const activeIndex = useMemo(
+    () => data?.findIndex((item) => item.category === activeCategory) ?? 0,
+    [activeCategory, data],
+  );
+
+  // 3. Loading State (Skeleton)
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[350px] w-full gap-4">
+        <div className="h-40 w-40 rounded-full border-8 border-slate-100 dark:border-slate-800 border-t-blue-500 animate-spin" />
+        <p className="text-[10px] font-black uppercase text-slate-400 animate-pulse">
+          Scanning Inventory...
+        </p>
+      </div>
+    );
+  }
+
+  if (error || !data)
+    return (
+      <div className="text-red-500 text-xs">Failed to load stock data</div>
+    );
 
   return (
     <Card
@@ -68,44 +129,41 @@ export default function ChartPieInteractive({ categories }) {
     >
       <ChartStyle id={id} config={chartConfig} />
 
-      {/* Header */}
       <CardHeader className="p-0 pb-4">
         <CardTitle className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest">
           Inventory Distribution
         </CardTitle>
         <CardDescription className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight">
-          Stock allocation across all categories
+          Live stock levels per category
         </CardDescription>
       </CardHeader>
 
-      {/* Chart */}
       <CardContent className="flex flex-1 items-center justify-center p-0">
         <ChartContainer
           id={id}
           config={chartConfig}
-          className="aspect-square h-[200px]"
+          className="aspect-square h-[220px]"
         >
           <PieChart>
             <ChartTooltip
               cursor={false}
               content={<ChartTooltipContent hideLabel />}
             />
-
             <Pie
-              data={categories}
+              data={data}
               dataKey="quantity"
               nameKey="category"
-              innerRadius={70}
+              innerRadius={75}
               strokeWidth={8}
               stroke="transparent"
               activeIndex={activeIndex}
               activeShape={({ outerRadius = 0, ...props }) => (
                 <g>
-                  <Sector {...props} outerRadius={outerRadius + 10} />
+                  <Sector {...props} outerRadius={outerRadius + 8} />
                   <Sector
                     {...props}
-                    outerRadius={outerRadius + 20}
-                    innerRadius={outerRadius + 12}
+                    outerRadius={outerRadius + 15}
+                    innerRadius={outerRadius + 10}
                     opacity={0.3}
                   />
                 </g>
@@ -122,16 +180,16 @@ export default function ChartPieInteractive({ categories }) {
                         dominantBaseline="middle"
                       >
                         <tspan
-                          className="fill-slate-900 dark:fill-white text-3xl font-black"
                           x={viewBox.cx}
                           y={viewBox.cy}
+                          className="fill-slate-900 dark:fill-white text-3xl font-black"
                         >
-                          {categories[activeIndex].quantity.toLocaleString()}
+                          {data[activeIndex]?.quantity.toLocaleString()}
                         </tspan>
                         <tspan
                           x={viewBox.cx}
-                          y={(viewBox.cy || 0) + 20}
-                          className="fill-slate-400 dark:fill-slate-500 text-[10px] font-black uppercase tracking-widest"
+                          y={(viewBox.cy || 0) + 22}
+                          className="fill-slate-400 dark:fill-slate-500 text-[10px] font-black uppercase tracking-[0.2em]"
                         >
                           Units
                         </tspan>
@@ -145,29 +203,28 @@ export default function ChartPieInteractive({ categories }) {
         </ChartContainer>
       </CardContent>
 
-      {/* Footer / Select */}
       <div className="pt-6">
-        <Select value={activeMonth} onValueChange={setActiveMonth}>
-          <SelectTrigger className="h-10 w-full text-xs font-bold rounded-xl bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-sm transition-all focus:ring-4 focus:ring-blue-500/10">
+        <Select value={activeCategory} onValueChange={setActiveCategory}>
+          <SelectTrigger className="h-11 w-full text-xs font-bold rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 shadow-sm focus:ring-4 focus:ring-blue-500/10">
             <SelectValue placeholder="Select category" />
           </SelectTrigger>
-
-          <SelectContent className="rounded-xl dark:bg-slate-900 dark:border-slate-800">
-            {months.map((key) => {
-              const config = chartConfig[key];
-              if (!config) return null;
-
+          <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800">
+            {data.map((item) => {
+              const config = chartConfig[item.category];
               return (
-                <SelectItem key={key} value={key} className="text-xs font-bold py-2">
+                <SelectItem
+                  key={item.category}
+                  value={item.category}
+                  className="text-xs font-bold py-2.5"
+                >
                   <div className="flex items-center gap-2.5">
                     <span
                       className="h-3 w-3 rounded-md"
-                      style={{
-                        backgroundColor: config.color,
-                      }}
+                      style={{ backgroundColor: config?.color }}
                     />
-                    <span className="text-slate-700 dark:text-slate-300">
-                      {config.label}
+                    <span>{config?.label || item.category}</span>
+                    <span className="ml-auto text-[10px] opacity-50 font-mono">
+                      ({item.quantity})
                     </span>
                   </div>
                 </SelectItem>

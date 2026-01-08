@@ -27,5 +27,7 @@ export const config = {
    * - favicon.ico (favicon file)
    * - public (public folder assets like logo.png)
    */
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|public).*)"],
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|manifest.webmanifest|icon-|apple-icon).*)",
+  ],
 };

@@ -10,7 +10,7 @@ import BtmNav from "@/components/BtmNav";
 import ScrollTop from "@/components/ScrollTop";
 
 const roboto = Nunito({
-  weight: "500",
+  weight: "400",
   subsets: ["latin"],
 });
 
@@ -18,8 +18,6 @@ export const metadata: Metadata = {
   title: "SPS-Admin",
   description: "SPS-Admin",
 };
- 
-
 
 export default function RootLayout({
   children,

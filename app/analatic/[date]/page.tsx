@@ -1,15 +1,8 @@
 import Chart from "./components/chart";
-import {
-  getCountFromServer,
-  query,
-  Timestamp,
-  where,
-} from "firebase/firestore";
-import { ordersRef, productsRef } from "@/lib/firebase";
+import { Timestamp } from "firebase/firestore";
 import ChartPieInteractive from "./components/pie";
-import { categories } from "@/data/categories";
 import SectionCards from "./components/section";
-import { CategoryDistribution, DailySalesData } from "@/types/productsTypes";
+import { DailySalesData } from "@/types/productsTypes";
 import { getOrdersWhOrdered } from "@/services/ordersServices";
 import { LayoutDashboard, ShieldCheck } from "lucide-react";
 
@@ -31,29 +24,6 @@ export default async function OverviewPage({ params }: PageProps) {
   const endDate = new Date(year, month, 0, 23, 59, 59);
 
   // 1. Fetch Global Counts
-  const [ordersSnapshot, productsSnapshot] = await Promise.all([
-    getCountFromServer(ordersRef),
-    getCountFromServer(productsRef),
-  ]);
-
-  const ordersNum: number = ordersSnapshot.data().count;
-  const productsNum: number = productsSnapshot.data().count;
-
-  // 2. Typed Fetch for Pie Chart
-  async function getCategoryData(): Promise<CategoryDistribution[]> {
-    const results = await Promise.all(
-      categories.slice(0, 16).map(async (category) => {
-        const q = query(productsRef, where("p_cat", "==", category));
-        const snap = await getCountFromServer(q);
-        return {
-          category,
-          quantity: snap.data().count,
-          fill: `var(--color-${category})`,
-        };
-      }),
-    );
-    return results;
-  }
 
   // 3. Typed Fetch for Sales Data
   async function getSalesData(): Promise<DailySalesData[]> {
@@ -97,15 +67,7 @@ export default async function OverviewPage({ params }: PageProps) {
     return finalData;
   }
 
-  const [chartPieData, salesData] = await Promise.all([
-    getCategoryData(),
-    getSalesData(),
-  ]);
-
-  const totalMonthlySales = salesData.reduce(
-    (acc, curr) => acc + curr.sales,
-    0,
-  );
+  const [salesData] = await Promise.all([getSalesData()]);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-500 pb-20">
@@ -158,11 +120,7 @@ export default async function OverviewPage({ params }: PageProps) {
               Operational KPIs
             </h2>
           </div>
-          <SectionCards
-            productsNum={productsNum}
-            ordersNum={ordersNum}
-            totalSales={totalMonthlySales}
-          />
+          <SectionCards />
         </section>
 
         {/* Charts Grid */}
@@ -196,7 +154,7 @@ export default async function OverviewPage({ params }: PageProps) {
               </div>
             </div>
             <div className="flex flex-col items-center justify-center">
-              <ChartPieInteractive categories={chartPieData} />
+              <ChartPieInteractive />
             </div>
           </div>
         </div>

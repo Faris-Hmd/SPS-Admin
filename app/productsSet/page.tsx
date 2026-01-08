@@ -63,12 +63,14 @@ export default async function ProductTable({
                   {/* Item Info */}
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <Link
-                        href={("/products/" + row.id) as any}
+                      <a
+                        href={
+                          "https://sudan-pc-shop.vercel.app/products/" + row.id
+                        }
                         className="text-sm font-black text-slate-900 dark:text-white truncate hover:text-blue-600 transition-colors"
                       >
                         {row.p_name}
-                      </Link>
+                      </a>
                       {row.isFeatured && (
                         <Star
                           size={12}
