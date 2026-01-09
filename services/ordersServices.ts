@@ -15,7 +15,7 @@ import {
   orderBy,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, unstable_cache } from "next/cache";
 import { OrderData } from "@/types/productsTypes";
 
 const COL = "orders";
@@ -95,35 +95,37 @@ type OrderFilter = {
   op: WhereFilterOp;
   val: any;
 };
-export async function getOrdersWh(
-  filters: OrderFilter[],
-): Promise<OrderData[]> {
-  // console.log("get where order from server");
+export const getOrdersWh = async (filters: OrderFilter[]) => {
+  // Generate a unique cache key based on the filter values
+  const filterKey = JSON.stringify(filters);
 
-  try {
-    // 1. Map our filter objects into Firestore where() constraints
-    const constraints: QueryConstraint[] = filters.map((f) =>
-      where(f.field as string, f.op, f.val),
-    );
+  return unstable_cache(
+    async (): Promise<OrderData[]> => {
+      try {
+        const constraints: QueryConstraint[] = filters.map((f) =>
+          where(f.field as string, f.op, f.val),
+        );
 
-    // 2. Create the query with all constraints spread into the function
-    const q = query(collection(db, COL), ...constraints);
+        const q = query(collection(db, COL), ...constraints);
+        const snap = await getDocs(q);
 
-    // 3. Execute
-    const snap = await getDocs(q);
-
-    return snap.docs.map((d) => {
-      return {
-        ...d.data(),
-        id: d.id,
-        deleveratstamp: "",
-      } as OrderData;
-    });
-  } catch (error) {
-    console.error("Firestore Query Error:", error);
-    return [];
-  }
-}
+        return snap.docs.map((d) => ({
+          ...d.data(),
+          id: d.id,
+          deleveratstamp: "",
+        })) as OrderData[];
+      } catch (error) {
+        console.error("Firestore Query Error:", error);
+        return [];
+      }
+    },
+    ["orders-where", filterKey], // Unique key: identifier + specific filter string
+    {
+      revalidate: 3600, // Cache for 1 hour by default
+      tags: ["orders"], // Generic tag for global revalidation
+    },
+  )();
+};
 export async function getOrdersWhOrdered(
   filters: OrderFilter[],
 ): Promise<OrderData[]> {
