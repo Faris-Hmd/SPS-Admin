@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { ProductImage, ProductType } from "@/types/productsTypes";
 import imageCompression from "browser-image-compression";
+import { redirect } from "next/navigation";
 
 export default function UpdateForm({ product }: { product: ProductType }) {
   const [imgs, setImgs] = useState<ProductImage[]>(product.p_imgs || []);
@@ -97,6 +98,7 @@ export default function UpdateForm({ product }: { product: ProductType }) {
 
       toast.success("Updated successfully", { id: toastId });
       setPending(false);
+      redirect("/productsSet" as any);
     } catch (error: any) {
       // Ignore Next.js redirect internal errors
       if (error.message?.includes("NEXT_REDIRECT")) return;

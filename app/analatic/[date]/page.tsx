@@ -5,6 +5,7 @@ import SectionCards from "./components/section";
 import { DailySalesData } from "@/types/productsTypes";
 import { getOrdersWhOrdered } from "@/services/ordersServices";
 import { LayoutDashboard, ShieldCheck } from "lucide-react";
+import DateSelector from "@/components/DataPicker";
 
 export const revalidate = 60;
 
@@ -85,28 +86,7 @@ export default async function OverviewPage({ params }: PageProps) {
               </h1>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="hidden md:flex flex-col items-end mr-2">
-                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
-                  Live Status
-                </span>
-                <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-tighter">
-                  Connected
-                </span>
-              </div>
-              <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-                <p className="text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider">
-                  {new Intl.DateTimeFormat("en-US", {
-                    month: "short",
-                    year: "numeric",
-                  }).format(startDate)}
-                </p>
-              </div>
-            </div>
+            <DateSelector currentMonth={date} />
           </div>
         </div>
       </header>
@@ -138,7 +118,7 @@ export default async function OverviewPage({ params }: PageProps) {
                 {date}
               </span>
             </div>
-            <div className="w-full h-[350px]">
+            <div className="w-full">
               <Chart salesData={salesData} />
             </div>
           </div>

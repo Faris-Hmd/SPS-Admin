@@ -12,7 +12,6 @@ const COL = "users";
  */
 export async function getUser(email: string): Promise<UserData | null> {
   if (!email) return null;
-  // console.log("get user from server", email);
 
   try {
     const snap = await getDoc(doc(db, COL, email));
@@ -36,7 +35,6 @@ export async function upUser(
   data: Partial<UserData>,
 ): Promise<{ success: boolean; error?: string }> {
   if (!email) return { success: false, error: "Email required" };
-  // console.log("up user from server", email);
 
   try {
     const userRef = doc(db, COL, email);

@@ -28,5 +28,4 @@ export async function product_update(formData: FormData) {
   }
 
   // 3. Move redirect OUTSIDE the try/catch block
-  redirect("/productsSet" as any);
 }

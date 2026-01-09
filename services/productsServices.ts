@@ -2,7 +2,6 @@
 
 import {
   addDoc,
-  collection,
   deleteDoc,
   doc,
   getDoc,
@@ -16,14 +15,12 @@ import {
   limit,
   QueryConstraint,
   WhereFilterOp,
-  serverTimestamp,
 } from "firebase/firestore";
 
-import { db, productsRef } from "@/lib/firebase";
+import { productsRef } from "@/lib/firebase";
 import { revalidatePath } from "next/cache";
 import { ProductType, ProductFilterKey } from "@/types/productsTypes";
-
-const COL = "products";
+import { unstable_cache } from "next/cache";
 
 function mapProduct(id: string, data: any): ProductType {
   return {
@@ -51,38 +48,50 @@ export async function getProduct(id: string): Promise<ProductType | null> {
   }
 }
 
-/* ----------------------------------------
-   GET MANY (filter + pagination)
----------------------------------------- */
-export async function getProducts(
+export const getProducts = async (
   filterKey: ProductFilterKey = "all",
   filterValue = "",
   pageSize = 100,
-): Promise<ProductType[]> {
-  const constraints: QueryConstraint[] = [];
+): Promise<ProductType[]> => {
+  // We define the data fetching logic inside unstable_cache
+  const cachedFetch = unstable_cache(
+    async (key: string, value: string, size: number) => {
+      const constraints: QueryConstraint[] = [];
 
-  if (filterKey === "p_name") {
-    constraints.push(orderBy("p_name"));
-    constraints.push(startAt(filterValue));
-    constraints.push(endAt(filterValue + "\uf8ff"));
-  }
+      if (key === "p_name" && value) {
+        constraints.push(orderBy("p_name"));
+        constraints.push(startAt(value));
+        constraints.push(endAt(value + "\uf8ff"));
+      }
 
-  if (filterKey === "p_cat") {
-    constraints.push(where("p_cat", "==", filterValue));
-  }
+      if (key === "p_cat" && value) {
+        constraints.push(where("p_cat", "==", value));
+      }
 
-  constraints.push(limit(pageSize));
+      constraints.push(limit(size));
 
-  try {
-    // console.log("get products from servers");
+      try {
+        // This will now only log when the cache is EMPTY or EXPIRED
+        console.log(`📡 FIREBASE DATABASE HIT: ${key} = ${value}`);
 
-    const snap = await getDocs(query(productsRef, ...constraints));
-    return snap.docs.map((d) => mapProduct(d.id, d.data()));
-  } catch (err) {
-    console.error("getProducts error:", err);
-    return [];
-  }
-}
+        const snap = await getDocs(query(productsRef, ...constraints));
+        return snap.docs.map((d) => mapProduct(d.id, d.data()));
+      } catch (err) {
+        console.error("getProducts error:", err);
+        return [];
+      }
+    },
+    // Cache Key: Unique string based on arguments
+    [`products-cache`],
+
+    {
+      revalidate: 3600, // Optional: Auto-refresh every 1 hour
+      tags: ["products-list"], // IMPORTANT: The tag we use to clear the cache
+    },
+  );
+
+  return cachedFetch(filterKey, filterValue, pageSize);
+};
 
 /* ----------------------------------------
    ADD
@@ -92,8 +101,9 @@ export async function addProduct(
 ): Promise<string> {
   // console.log("add product to servers", data);
 
-  const res = await addDoc(collection(db, COL), data);
-  revalidatePath("/products");
+  const res = await addDoc(productsRef, data);
+  // revalidateTag("products-list", "products-cache");
+  revalidatePath("/productsSet");
   return res.id;
 }
 
@@ -106,18 +116,8 @@ export async function upProduct(
 ): Promise<void> {
   // console.log("update product to servers", data);
 
-  await updateDoc(doc(db, COL, id), data as any);
-  revalidatePath("/products");
-}
-
-/* ----------------------------------------
-   DELETE
----------------------------------------- */
-export async function delProduct(id: string): Promise<void> {
-  // console.log("delete product to servers", id);
-
-  await deleteDoc(doc(db, COL, id));
-  revalidatePath("/products");
+  await updateDoc(doc(productsRef, id), data as any);
+  revalidatePath("/productsSet");
 }
 
 /* ----------------------------------------
@@ -137,7 +137,7 @@ export async function getProductsWh(
       where(f.field as string, f.op, f.val),
     );
 
-    const snap = await getDocs(query(collection(db, COL), ...constraints));
+    const snap = await getDocs(query(productsRef, ...constraints));
 
     return snap.docs.map((d) => ({
       id: d.id,
@@ -158,52 +158,6 @@ export async function getProductsIds() {
   return products;
 }
 
-const IMG_URLS = [
-  "https://lzmijym9f9dkp5qm.public.blob.vercel-storage.com/blue1.jpeg",
-  "https://lzmijym9f9dkp5qm.public.blob.vercel-storage.com/green1.jpeg",
-  "https://lzmijym9f9dkp5qm.public.blob.vercel-storage.com/green2.jpeg",
-];
-
-const CATEGORIES = [
-  "PC",
-  "LAPTOP",
-  "WEBCAMS",
-  "HARD_DRIVES",
-  "HEADSETS",
-  "KEYBOARDS",
-  "SPEAKERS",
-  "PRINTERS",
-  "MICROPHONES",
-  "MONITORS",
-  "SSD",
-  "MOUSES",
-];
-
-// Real-world PC component brands
-const BRANDS = [
-  "ASUS",
-  "MSI",
-  "Gigabyte",
-  "Corsair",
-  "Samsung",
-  "Western Digital",
-  "Logitech",
-  "Razer",
-  "Intel",
-  "AMD",
-  "Crucial",
-  "Kingston",
-];
-const ADJECTIVES = [
-  "Pro",
-  "Ultra",
-  "Gaming",
-  "Elite",
-  "Series X",
-  "Wireless",
-  "NextGen",
-];
-
 /**
  * Generates and uploads random products with brand names to Firestore.
  */
@@ -215,11 +169,12 @@ export async function product_feature_toggle(
   // console.log("product_feature_toggle", id, currentStatus);
 
   try {
-    const docRef = doc(db, "products", id);
+    const docRef = doc(productsRef, id);
     await updateDoc(docRef, {
       isFeatured: !currentStatus,
     });
     revalidatePath("/productsSet");
+
     return { success: true };
   } catch (error) {
     console.error(error);

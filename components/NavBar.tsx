@@ -8,10 +8,14 @@ import { ModeToggle } from "@/components/ModeToggle";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 
+// Get current YYYY-MM dynamically
+const currentMonthSlug = new Date().toISOString().slice(0, 7);
+
 const ADMIN_LINKS = [
   {
     title: "Analytics",
-    href: "/analatic/2026-01",
+    href: "/analatic", // Base path for active check
+    defaultSlug: `/${currentMonthSlug}`, // Default month to navigate to
     icon: BarChart3,
     color: "text-purple-600",
     bg: "bg-purple-50 dark:bg-purple-900/20",
@@ -42,15 +46,16 @@ const ADMIN_LINKS = [
 export default function Navbar() {
   const { data: session } = useSession();
   const pathname = usePathname();
+
   if (!session?.user) return null;
 
   return (
-    <nav className="sticky top-0 z-50 transition-all duration-300 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md py-3 border-b border-slate-100 dark:border-slate-800">
+    <nav className="sticky top-0 z-50 transition-all duration-300 bg-white/80 dark:bg-slate-900/80 py-3 border-b border-slate-100 dark:border-slate-800 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 flex justify-between items-center">
         {/* --- BRAND --- */}
         <div className="flex items-center gap-8">
           <Link
-            href={"/analatic/2026-01" as any}
+            href={`/analatic/${currentMonthSlug}` as any}
             className="group flex items-center gap-2.5 transition-transform active:scale-95"
           >
             <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20 group-hover:rotate-12 transition-transform duration-300">
@@ -71,12 +76,19 @@ export default function Navbar() {
             <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-2" />
             {ADMIN_LINKS.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href;
+
+              // Active check: uses startsWith so /analatic/2026-02 stays active on the /analatic tab
+              const isActive = pathname.startsWith(item.href);
+
+              // Determine actual destination
+              const destination = item.defaultSlug
+                ? `${item.href}${item.defaultSlug}`
+                : item.href;
 
               return (
                 <Link
                   key={item.href}
-                  href={item.href as any}
+                  href={destination as any}
                   className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
                     isActive
                       ? `${item.color} ${item.bg}`
@@ -108,12 +120,12 @@ export default function Navbar() {
               </span>
             </div>
             <Link href="/profile">
-              <Avatar className="h-9 w-9 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-center bg-white dark:bg-slate-800">
+              <Avatar className="h-9 w-9 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-center bg-white dark:bg-slate-800 transition-transform active:scale-90">
                 <AvatarImage
                   src={session?.user?.image || ""}
                   className="h-full w-full object-cover"
                 />
-                <AvatarFallback className="bg-blue-600 text-white font-black text-xs">
+                <AvatarFallback className="bg-blue-600 text-white font-black text-xs h-full w-full flex items-center justify-center">
                   AD
                 </AvatarFallback>
               </Avatar>

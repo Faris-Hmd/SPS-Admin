@@ -62,11 +62,11 @@ export default async function ShippedOrdersPage({
               <h1 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
                 Shipped <span className="text-blue-600">Orders</span>
               </h1>
+            </div>
+            <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 mt-1">
                 <DateSelector currentMonth={date} />
               </div>
-            </div>
-            <div className="flex items-center gap-3">
               <Link
                 href={`/manageOrder` as any}
                 className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-blue-100 transition-all border border-blue-100 dark:border-blue-900/30 whitespace-nowrap"

@@ -1,27 +1,31 @@
-"use client";
-
-import React from "react";
-import { useParams } from "next/navigation";
-import useSWR from "swr";
 import { getDriver } from "@/services/driversServices";
 import { DriverForm } from "@/components/dashboard/DriverForm";
-import { Loader2 } from "lucide-react";
+import { ShieldAlert } from "lucide-react";
 
-export default function EditDriverPage() {
-  const { id } = useParams();
-  const { data: driver, isLoading } = useSWR(id ? `driver-${id}` : null, () => getDriver(id as string));
+export default async function EditDriverPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <Loader2 className="animate-spin text-blue-600" size={40} />
-        <p className="text-slate-400 font-bold animate-pulse uppercase tracking-[0.2em] text-[10px]">Retrieving Credentials...</p>
-      </div>
-    );
-  }
+  // Direct server-side call (cached via unstable_cache in service)
+  const driver = await getDriver(id);
 
   if (!driver) {
-    return <div className="p-20 text-center font-black text-rose-500 uppercase tracking-widest">Driver Data Nullified</div>;
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 p-20 text-center">
+        <div className="w-16 h-16 bg-rose-50 dark:bg-rose-900/20 rounded-full flex items-center justify-center mb-2">
+          <ShieldAlert className="text-rose-500" size={32} />
+        </div>
+        <h2 className="font-black text-rose-500 uppercase tracking-widest text-lg">
+          Access Denied
+        </h2>
+        <p className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px]">
+          Driver Credentials Not Found or Nullified
+        </p>
+      </div>
+    );
   }
 
   return <DriverForm initialData={driver} isEdit />;

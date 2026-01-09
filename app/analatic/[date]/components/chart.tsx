@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { useParams } from "next/navigation";
 import {
   AreaChart,
   Area,
@@ -17,7 +16,6 @@ import {
 } from "@/components/ui/chart";
 import { Card, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Activity } from "lucide-react";
-import DateSelector from "@/components/DataPicker";
 
 type DaySales = {
   month: string;
@@ -37,9 +35,6 @@ export default function RevenueAnalytics({
 }: {
   salesData: DaySales[];
 }) {
-  const params = useParams();
-  const currentMonth = (params.date as string) || "2026-01";
-
   const { totalSales, totalOrders } = useMemo(() => {
     return salesData.reduce(
       (acc, curr) => ({
@@ -53,9 +48,9 @@ export default function RevenueAnalytics({
   return (
     /* min-w-0 is critical here to prevent flex-basis overgrowth */
     <Card className="w-full border-none shadow-none bg-transparent min-w-0 overflow-visible">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-2 mb-6">
-        <div className="space-y-1">
-          <CardTitle className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
+      <div className="flex items-center w-full justify-between gap-2 px-2 mb-6">
+        <div className="space-y-1 w-full">
+          <CardTitle className="text-xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
             Revenue <span className="text-blue-600">Analytics</span>
           </CardTitle>
           <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-black text-[10px] uppercase tracking-[0.2em]">
@@ -65,8 +60,8 @@ export default function RevenueAnalytics({
           </div>
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="flex items-baseline gap-1 bg-blue-600 text-white font-black px-5 py-2.5 rounded-xl shadow-xl shadow-blue-500/20">
+        <div className="flex items-center gap-3">
+          <div className="flex items-baseline gap-1 bg-blue-700 text-white font-black px-5 py-1.5 rounded-xl shadow shadow-blue-500/20">
             <span className="text-lg font-mono">
               {totalSales.toLocaleString()}
             </span>
@@ -74,12 +69,11 @@ export default function RevenueAnalytics({
               SDG
             </span>
           </div>
-          <DateSelector currentMonth={currentMonth} />
         </div>
       </div>
 
       {/* CHART WRAPPER: Fixed height and relative positioning */}
-      <div className="relative w-full h-[150px] sm:h-[300px] px-0 overflow-hidden">
+      <div className="relative w-full h-[150px] sm:h-[250px] px-0 overflow-hidden">
         {salesData.length === 0 ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl">
             <Activity className="text-slate-300 mb-2" />
@@ -99,16 +93,25 @@ export default function RevenueAnalytics({
                 margin={{ left: 0, right: 10, top: 10, bottom: 0 }}
               >
                 <defs>
+                  {/* Revenue Gradient */}
                   <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
                     <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                   </linearGradient>
+
+                  {/* Orders Gradient - Added this */}
+                  <linearGradient id="ordersGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
                 </defs>
+
                 <CartesianGrid
                   vertical={false}
                   strokeDasharray="4 4"
                   className="stroke-slate-200 dark:stroke-slate-800/50"
                 />
+
                 <XAxis
                   dataKey="day"
                   axisLine={false}
@@ -118,6 +121,7 @@ export default function RevenueAnalytics({
                   className="text-[10px] font-black text-slate-400 dark:text-slate-600 uppercase"
                 />
                 <YAxis hide domain={["auto", "auto"]} />
+
                 <ChartTooltip
                   cursor={{
                     stroke: "#3b82f6",
@@ -131,6 +135,8 @@ export default function RevenueAnalytics({
                     />
                   }
                 />
+
+                {/* EXISTING: Revenue Area */}
                 <Area
                   type="monotone"
                   dataKey="sales"
@@ -139,6 +145,17 @@ export default function RevenueAnalytics({
                   fill="url(#salesGrad)"
                   animationDuration={1500}
                   activeDot={{ r: 6, strokeWidth: 0, fill: "#3b82f6" }}
+                />
+
+                {/* Hidden Orders Area - This makes it show in the Tooltip only */}
+                <Area
+                  type="monotone"
+                  dataKey="orders"
+                  stroke="transparent"
+                  fill="transparent"
+                  strokeWidth={0}
+                  activeDot={false} // Prevents a dot from appearing on the hidden line
+                  animationDuration={0}
                 />
               </AreaChart>
             </ResponsiveContainer>

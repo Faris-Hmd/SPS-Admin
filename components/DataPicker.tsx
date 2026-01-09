@@ -8,68 +8,60 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CalendarDays } from "lucide-react";
 
 export default function DateSelector({
-  currentMonth,
+  currentMonth, // e.g., "2026-01"
 }: {
   currentMonth: string;
 }) {
   const router = useRouter();
 
-  // Split "2025-01" into year="2025" and month="01"
-  const [selectedYear, selectedMonth] = currentMonth.split("-");
-
-  const years = ["2024", "2025", "2026"];
+  // 1. Generate the combined options dynamically
+  const years = [2024, 2025, 2026];
   const months = [
-    { label: "January", val: "01" },
-    { label: "February", val: "02" },
-    { label: "March", val: "03" },
-    { label: "April", val: "04" },
-    { label: "May", val: "05" },
-    { label: "June", val: "06" },
-    { label: "July", val: "07" },
-    { label: "August", val: "08" },
-    { label: "September", val: "09" },
-    { label: "October", val: "10" },
-    { label: "November", val: "11" },
-    { label: "December", val: "12" },
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08",
+    "09",
+    "10",
+    "11",
+    "12",
   ];
 
-  const handleUpdate = (year: string, month: string) => {
-    router.push(`${year}-${month}` as any);
+  const dateOptions = years
+    .flatMap((year) => months.map((month) => `${year}-${month}`))
+    .reverse(); // Reverse so newest dates (2026) appear first
+
+  const formatLabel = (val: string) => {
+    const [y, m] = val.split("-");
+    const date = new Date(parseInt(y), parseInt(m) - 1);
+    return date.toLocaleString("en-US", { month: "long", year: "numeric" });
   };
 
   return (
-    <div className="flex gap-2">
-      {/* Year Selection */}
+    <div className="flex items-center gap-2">
       <Select
-        value={selectedYear}
-        onValueChange={(v) => handleUpdate(v, selectedMonth)}
+        value={currentMonth}
+        onValueChange={(value) => router.push(value as any)}
       >
-        <SelectTrigger className="w-[100px] h-10 rounded-xl bg-blue-50 border-blue-100 text-blue-700 font-bold">
-          <SelectValue />
+        <SelectTrigger className="w-[180px] h-10 rounded-xl bg-blue-50 border-blue-100 text-blue-700 font-bold dark:bg-slate-900 dark:border-slate-800 dark:text-blue-400">
+          <div className="flex items-center gap-2">
+            <CalendarDays size={16} className="opacity-70" />
+            <SelectValue>{formatLabel(currentMonth)}</SelectValue>
+          </div>
         </SelectTrigger>
-        <SelectContent className="rounded-xl">
-          {years.map((y) => (
-            <SelectItem key={y} value={y} className="font-semibold">
-              {y}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
 
-      {/* Month Selection */}
-      <Select
-        value={selectedMonth}
-        onValueChange={(v) => handleUpdate(selectedYear, v)}
-      >
-        <SelectTrigger className="w-[140px] h-10 rounded-xl bg-blue-50 border-blue-100 text-blue-700 font-bold">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent className="rounded-xl">
-          {months.map((m) => (
-            <SelectItem key={m.val} value={m.val} className="font-semibold">
-              {m.label}
+        <SelectContent className="max-h-[300px] rounded-xl">
+          {dateOptions.map((opt) => (
+            <SelectItem key={opt} value={opt} className="font-semibold">
+              <span className="font-mono mr-2 opacity-50 text-xs">{opt}</span>
+              {formatLabel(opt)}
             </SelectItem>
           ))}
         </SelectContent>
