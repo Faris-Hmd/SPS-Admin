@@ -1,7 +1,7 @@
 "use client";
 
 import useSWR from "swr";
-import { Pie, PieChart, Label, Sector } from "recharts";
+import { Pie, PieChart, Label, Sector, Cell } from "recharts";
 import { useEffect, useState, useMemo } from "react";
 import {
   Card,
@@ -25,18 +25,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-// Keep your existing chartConfig here...
 const chartConfig = {
-  PC: { label: "PC", color: "#cbd5e1" }, // slate-300
-  LAPTOP: { label: "Laptop", color: "#94a3b8" }, // slate-400
-  WEBCAMS: { label: "Webcams", color: "#64748b" }, // slate-500
-  HARD_DRIVES: { label: "Hard Drives", color: "#475569" }, // slate-600
-  HEADSETS: { label: "Headsets", color: "#334155" }, // slate-700
-  KEYBOARDS: { label: "Keyboards", color: "#1e293b" }, // slate-800
-  SPEAKERS: { label: "Speakers", color: "#0f172a" }, // slate-900
-  PRINTERS: { label: "Printers", color: "#020617" }, // slate-950
-
-  // Rotating back for the remaining categories to maintain the gradient feel
+  PC: { label: "PC", color: "#cbd5e1" },
+  LAPTOP: { label: "Laptop", color: "#94a3b8" },
+  WEBCAMS: { label: "Webcams", color: "#64748b" },
+  HARD_DRIVES: { label: "Hard Drives", color: "#475569" },
+  HEADSETS: { label: "Headsets", color: "#334155" },
+  KEYBOARDS: { label: "Keyboards", color: "#1e293b" },
+  SPEAKERS: { label: "Speakers", color: "#0f172a" },
+  PRINTERS: { label: "Printers", color: "#020617" },
   MICROPHONES: { label: "Microphones", color: "#cbd5e1" },
   MONITORS: { label: "Monitors", color: "#94a3b8" },
   TABLETS: { label: "Tablets", color: "#64748b" },
@@ -44,21 +41,33 @@ const chartConfig = {
   SCANNERS: { label: "Scanners", color: "#334155" },
   SSD: { label: "SSD", color: "#1e293b" },
   MOUSES: { label: "Mouses", color: "#0f172a" },
-  DESKTOP: { label: "Desktop", color: "#3b82f6" }, // Kept one Blue for a "Highlight" accent
+  DESKTOP: { label: "Desktop", color: "#3b82f6" },
 } satisfies ChartConfig;
 
-// Simplified fetcher for SWR
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function ChartPieInteractive() {
   const id = "pie-interactive";
 
-  const { data, isLoading, error } = useSWR("/api/stats/categories", fetcher, {
+  const {
+    data: rawData,
+    isLoading,
+    error,
+  } = useSWR("/api/stats/categories", fetcher, {
     revalidateOnFocus: false,
     refreshInterval: 60000,
   });
 
   const [activeCategory, setActiveCategory] = useState("");
+
+  // Transform data to include the color fill from chartConfig
+  const data = useMemo(() => {
+    if (!rawData || Array.isArray(rawData) === false) return [];
+    return rawData.map((item: any) => ({
+      ...item,
+      fill: (chartConfig as any)[item.category]?.color || "#cbd5e1",
+    }));
+  }, [rawData]);
 
   useEffect(() => {
     if (data && data.length > 0 && !activeCategory) {
@@ -82,9 +91,11 @@ export default function ChartPieInteractive() {
     );
   }
 
-  if (error || !data || data.error)
+  if (error || !data || data.length === 0)
     return (
-      <div className="text-red-500 text-xs">Failed to load stock data</div>
+      <div className="text-red-500 text-[10px] font-black uppercase p-10 text-center">
+        Data Nullified: Failed to load stock
+      </div>
     );
 
   return (
@@ -134,6 +145,11 @@ export default function ChartPieInteractive() {
                 </g>
               )}
             >
+              {/* This maps the specific colors to the cells */}
+              {data.map((entry: any, index: number) => (
+                <Cell key={`cell-${index}`} fill={entry.fill} />
+              ))}
+
               <Label
                 content={({ viewBox }) => {
                   if (viewBox && "cx" in viewBox && "cy" in viewBox) {
@@ -170,7 +186,7 @@ export default function ChartPieInteractive() {
 
       <div className="pt-6">
         <Select value={activeCategory} onValueChange={setActiveCategory}>
-          <SelectTrigger className="h-11 w-full text-xs font-bold rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 shadow-sm focus:ring-4 focus:ring-blue-500/10">
+          <SelectTrigger className="h-11 w-full text-xs font-bold rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 shadow-sm focus:ring-4 focus:ring-blue-500/10 outline-none">
             <SelectValue placeholder="Select category" />
           </SelectTrigger>
           <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800 max-h-[300px]">
@@ -180,7 +196,7 @@ export default function ChartPieInteractive() {
                 <SelectItem
                   key={item.category}
                   value={item.category}
-                  className="text-xs font-bold py-2.5"
+                  className="text-xs font-bold py-2.5 cursor-pointer"
                 >
                   <div className="flex items-center gap-2.5 w-full">
                     <span
