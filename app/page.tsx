@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+
 export default function Home() {
-  return <div>hello , admin</div>;
+  redirect("/analatic/2026-01");
 }
