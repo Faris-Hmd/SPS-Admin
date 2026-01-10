@@ -1,101 +1,11 @@
 "use server";
 
-import {
-  addDoc,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  updateDoc,
-  where,
-  orderBy,
-  startAt,
-  endAt,
-  limit,
-  QueryConstraint,
-  WhereFilterOp,
-} from "firebase/firestore";
+import { addDoc, deleteDoc, doc, updateDoc } from "firebase/firestore";
 
 import { productsRef } from "@/lib/firebase";
 import { revalidatePath } from "next/cache";
-import { ProductType, ProductFilterKey } from "@/types/productsTypes";
-import { unstable_cache } from "next/cache";
+import { ProductType } from "@/types/productsTypes";
 
-function mapProduct(id: string, data: any): ProductType {
-  return {
-    id,
-    p_name: data.p_name ?? "",
-    p_cat: data.p_cat ?? "",
-    p_cost: data.p_cost ?? 0,
-    p_details: data.p_details ?? "",
-    p_imgs: data.p_imgs ?? [],
-    createdAt: data.createdAt?.toMillis?.() ?? null,
-    isFeatured: data.isFeatured ?? false,
-  };
-}
-
-/* ----------------------------------------
-   GET ONE
----------------------------------------- */
-export async function getProduct(id: string): Promise<ProductType | null> {
-  try {
-    const snap = await getDoc(doc(productsRef, id));
-    return snap.exists() ? mapProduct(snap.id, snap.data()) : null;
-  } catch (err) {
-    console.error("getProduct error:", err);
-    return null;
-  }
-}
-
-export const getProducts = async (
-  filterKey: ProductFilterKey = "all",
-  filterValue = "",
-  pageSize = 100,
-): Promise<ProductType[]> => {
-  // We define the data fetching logic inside unstable_cache
-  const cachedFetch = unstable_cache(
-    async (key: string, value: string, size: number) => {
-      const constraints: QueryConstraint[] = [];
-
-      if (key === "p_name" && value) {
-        constraints.push(orderBy("p_name"));
-        constraints.push(startAt(value));
-        constraints.push(endAt(value + "\uf8ff"));
-      }
-
-      if (key === "p_cat" && value) {
-        constraints.push(where("p_cat", "==", value));
-      }
-
-      constraints.push(limit(size));
-
-      try {
-        // This will now only log when the cache is EMPTY or EXPIRED
-        console.log(`📡 FIREBASE DATABASE HIT: ${key} = ${value}`);
-
-        const snap = await getDocs(query(productsRef, ...constraints));
-        return snap.docs.map((d) => mapProduct(d.id, d.data()));
-      } catch (err) {
-        console.error("getProducts error:", err);
-        return [];
-      }
-    },
-    // Cache Key: Unique string based on arguments
-    [`products-cache`],
-
-    {
-      revalidate: 3600, // Optional: Auto-refresh every 1 hour
-      tags: ["products-list"], // IMPORTANT: The tag we use to clear the cache
-    },
-  );
-
-  return cachedFetch(filterKey, filterValue, pageSize);
-};
-
-/* ----------------------------------------
-   ADD
----------------------------------------- */
 export async function addProduct(
   data: Omit<ProductType, "id">,
 ): Promise<string> {
@@ -107,67 +17,18 @@ export async function addProduct(
   return res.id;
 }
 
-/* ----------------------------------------
-   UPDATE
----------------------------------------- */
 export async function upProduct(
   id: string,
   data: Partial<ProductType>,
 ): Promise<void> {
-  // console.log("update product to servers", data);
-
   await updateDoc(doc(productsRef, id), data as any);
   revalidatePath("/productsSet");
 }
-
-/* ----------------------------------------
-   ADVANCED WHERE (Admin / Analytics)
----------------------------------------- */
-type ProductFilter = {
-  field: keyof ProductType;
-  op: WhereFilterOp;
-  val: any;
-};
-
-export async function getProductsWh(
-  filters: ProductFilter[],
-): Promise<ProductType[]> {
-  try {
-    const constraints = filters.map((f) =>
-      where(f.field as string, f.op, f.val),
-    );
-
-    const snap = await getDocs(query(productsRef, ...constraints));
-
-    return snap.docs.map((d) => ({
-      id: d.id,
-      ...d.data(),
-    })) as ProductType[];
-  } catch (err) {
-    console.error("getProductsWh error:", err);
-    return [];
-  }
-}
-
-export async function getProductsIds() {
-  const q = query(productsRef, limit(20));
-  const querySnapshot = await getDocs(q);
-  const products = querySnapshot.docs.map((doc) => ({
-    id: doc.id,
-  }));
-  return products;
-}
-
-/**
- * Generates and uploads random products with brand names to Firestore.
- */
 
 export async function product_feature_toggle(
   id: string,
   currentStatus: boolean,
 ) {
-  // console.log("product_feature_toggle", id, currentStatus);
-
   try {
     const docRef = doc(productsRef, id);
     await updateDoc(docRef, {

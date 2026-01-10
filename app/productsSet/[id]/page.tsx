@@ -1,6 +1,6 @@
-import { getProduct } from "@/services/productsServices";
+import { getProduct } from "@/data/productsData";
 import UpdateForm from "./components/updateform";
-import { ShieldCheck, Edit3 } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 export async function UpdateFormPage({ params }: { params: { id: string } }) {
   const { id } = await params;

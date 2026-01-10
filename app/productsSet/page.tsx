@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Plus, Package, Star, ShieldCheck } from "lucide-react";
 import Dropdown from "./components/dropdown";
 import TableSearchForm from "./components/tableSearchForm";
-import { getProducts } from "@/services/productsServices";
+import { getProducts } from "@/data/productsData";
 
 export default async function ProductTable({
   searchParams,

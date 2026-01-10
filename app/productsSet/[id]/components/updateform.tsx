@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { categories } from "@/data/categories";
-import { Camera, CircleX, Edit2, ImagePlus, Loader } from "lucide-react";
+import { Camera, Edit2, ImagePlus, Loader } from "lucide-react";
 import { useState } from "react";
 import ProductImgCarousel from "@/components/carousel";
 import { upload } from "@vercel/blob/client";
